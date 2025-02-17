@@ -28,7 +28,7 @@ func (r *userRepositoryImpl) GetOrCreateByUsernamePassword(ctx context.Context, 
 
 	insertQuery := `
 		INSERT INTO users (username, password, balance)
-		VALUES ($1, $2, 10000)
+		VALUES ($1, $2, 10000000)
 		ON CONFLICT (username) DO NOTHING
 		RETURNING id, username, password, balance
 	`

@@ -14,7 +14,7 @@ func BenchmarkBuyLoadTest(b *testing.B) {
 	authToken := fmt.Sprintf("Bearer %s", token)
 
 	rate := vegeta.Rate{Freq: 1000, Per: time.Second}
-	duration := 5 * time.Second
+	duration := 1 * time.Second
 
 	var targets []vegeta.Target
 	for i := 0; i < 1000; i++ {

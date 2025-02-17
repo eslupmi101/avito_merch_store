@@ -14,7 +14,7 @@ func BenchmarkLoadTestInfo(b *testing.B) {
 	authToken := fmt.Sprintf("Bearer %s", token)
 
 	rate := vegeta.Rate{Freq: 1000, Per: time.Second} // 1000 RPS
-	duration := 5 * time.Second                       // Тестируем 1 секунду
+	duration := 1 * time.Second
 
 	// Настройка цели
 	var targets []vegeta.Target

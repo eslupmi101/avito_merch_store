@@ -12,7 +12,7 @@ import (
 func BenchmarkLoadTestAuth(b *testing.B) {
 	// Настройки нагрузки
 	rate := vegeta.Rate{Freq: 1000, Per: time.Second} // 1000 RPS
-	duration := 1 * time.Second                       // Тестируем 10 секунд
+	duration := 1 * time.Second
 
 	var targets []vegeta.Target
 	for i := 0; i < 1000; i++ { // 100,000 уникальных пользователей
