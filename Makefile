@@ -54,12 +54,6 @@ test-db-script-setup:
 	@echo "Running setup.py..."
 	./scripts/test_database/.venv/bin/${PYTHON_VERSION} ./scripts/test_database/setup.py
 
-test-db-script-delete:
-	bash ./scripts/test_database/delete.sh
-
-test-db-script-clean: test-db-script-delete
-	rm -rf ./scripts/test_database/.venv
-
 #  Integration tests
 test-int:
 	docker compose -f ./scripts/integration_test/docker-compose-test.yaml up -d
@@ -72,23 +66,22 @@ test-int:
 	./scripts/integration_test/.venv/bin/${PYTHON_VERSION} ./scripts/integration_test/setup.py
 	@echo "Integration tests starting"
 	./scripts/integration_test/.venv/bin/${PYTHON_VERSION} ./scripts/integration_test/api_tests.py
-	docker compose -f ./scripts/integration_test/docker-compose-test.yaml down
 
+test-clean:
+	bash ./scripts/test_database/delete.sh
+	rm -rf ./scripts/test_database/.venv
+	rm -rf ./scripts/integration_test/.venv
+	docker compose -f ./scripts/integration_test/docker-compose-test.yaml down
 
 test-unit:
 	go test -coverpkg=./api/controller -coverprofile=coverage.out ./test/unit/controller/
 
-test-bench: ## run benchmark tests
-	go test -bench ./...
+test-bench:
+	go test -bench . -v -benchmem ./test/bench/
 
-# Generate test coverage
-test-all: test-db-script-delete test-db-script-create test-db-script-setup test-unit test-int
+test-all: test-clean test-db-script-create test-db-script-setup test-unit test-int test-bench
 
 # --- Main scripts ---
-
-# all: tidy fmt lint test build
-all: tidy clean build
-
 build:
 	mkdir -p ./.bin
 	go build -o ./.bin/${BINARY_NAME} ./cmd/merch_store
@@ -104,9 +97,6 @@ test:
 
 fmt:
 	go fmt ./...
-
-lint:
-	golangci-lint run ./...
 
 tidy:
 	go mod tidy

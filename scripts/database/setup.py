@@ -23,6 +23,8 @@ TABLES = {
             password TEXT NOT NULL,
             balance INT NOT NULL DEFAULT 0 CHECK (balance >= 0 AND balance <= 100000000)
         );
+        CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
+        CREATE INDEX IF NOT EXISTS idx_users_id ON users (id);
     """,
     "merch": """
         CREATE TABLE IF NOT EXISTS merch (
@@ -30,6 +32,7 @@ TABLES = {
             name VARCHAR(200) NOT NULL UNIQUE,
             price INT NOT NULL CHECK (price > 0 AND price <= 100000000)
         );
+        CREATE INDEX IF NOT EXISTS idx_merch_name ON merch (name);
     """,
     "transactions_table": """
         CREATE TABLE IF NOT EXISTS transactions (
@@ -38,6 +41,8 @@ TABLES = {
             recipient INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             amount INT NOT NULL CHECK (amount > 0 AND amount <= 100000000)
         );
+        CREATE INDEX IF NOT EXISTS idx_transactions_sender ON transactions (sender);
+        CREATE INDEX IF NOT EXISTS idx_transactions_recipient ON transactions (recipient);
     """,
     "merch_orders": """
         CREATE TABLE IF NOT EXISTS merch_orders (
@@ -45,6 +50,7 @@ TABLES = {
             owner INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             merch INT NOT NULL REFERENCES merch(id) ON DELETE CASCADE
         );
+        CREATE INDEX IF NOT EXISTS idx_merch_orders_owner ON merch_orders (owner);
     """
 }
 

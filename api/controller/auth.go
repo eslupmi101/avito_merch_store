@@ -44,32 +44,11 @@ func (auth *Auth) Authentication(w http.ResponseWriter, r *http.Request) {
 		slog.String("username", request.Username),
 	)
 
-	user, err := auth.AuthUsecase.GetByUsernamePassword(r.Context(), request.Username, request.Password)
+	user, err := auth.AuthUsecase.GetOrCreateByUsernamePassword(r.Context(), request.Username, request.Password)
 	if err != nil {
-		if err.Error() != "user not found" && err.Error() != "invalid username or password" {
-			slog.Error("Database error during authentication", slog.String("error", err.Error()))
-			http.Error(w, utility.JsonError("Internal server error"), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if err != nil && err.Error() == "invalid username or password" {
-		slog.Warn("Invalid credentials", slog.String("username", request.Username))
-		http.Error(w, utility.JsonError("invalid username or password"), http.StatusUnauthorized)
+		slog.Error("User not authorized or lost connection", slog.String("error", err.Error()))
+		http.Error(w, utility.JsonError("User not authorized"), http.StatusUnauthorized)
 		return
-	}
-
-	// business logic. Create user if no user with such username
-	if err != nil && err.Error() == "user not found" {
-		slog.Info("User not found, proceeding to registration", slog.String("username", request.Username))
-		user, err = auth.AuthUsecase.CreateUser(r.Context(), request.Username, request.Password)
-		if err != nil {
-			slog.Error("Failed to create user", slog.String("username", request.Username), slog.String("error", err.Error()))
-			http.Error(w, utility.JsonError("Internal server error"), http.StatusInternalServerError)
-			return
-		}
-
-		slog.Info("User created successfully", slog.Int("userID", user.ID))
 	}
 
 	token, err := auth.AuthUsecase.CreateToken(user.ID, auth.Cfg.SecretKey)

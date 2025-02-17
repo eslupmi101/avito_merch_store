@@ -46,7 +46,7 @@ func (buy *Buy) Buy(w http.ResponseWriter, r *http.Request) {
 			slog.Info("Insufficient funds for user.", slog.Int("userID", userID))
 			http.Error(w, "Insufficient funds", http.StatusBadRequest)
 
-		case "merch does not exists":
+		case "merch does not exist":
 			slog.Info("Merch does not exists.", slog.String("merchName", merchName))
 			http.Error(w, "Merch does not exists", http.StatusBadRequest)
 

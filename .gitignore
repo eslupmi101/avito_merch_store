@@ -287,3 +287,6 @@ Thumbs.db
 .bin/
 
 vendor/
+
+*.bin
+*.o

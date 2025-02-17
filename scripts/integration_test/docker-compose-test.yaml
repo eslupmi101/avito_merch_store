@@ -12,6 +12,8 @@ services:
       - POSTGRES_PASSWORD=pass
     ports:
       - 5440:5432
+    networks:
+      - internal
     volumes:
       - pg_data:/var/lib/postgresql/data
 
@@ -28,5 +30,10 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_SSLMODE=disable
+    networks:
+      - internal
     ports:
       - 8090:8080
+
+networks:
+  internal:

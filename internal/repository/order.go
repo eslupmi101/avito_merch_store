@@ -19,55 +19,65 @@ func NewOrderRepository(db *config.PostgresDb) domain.OrderRepository {
 	return &orderRepositoryImpl{database: db}
 }
 
-func (r orderRepositoryImpl) BuyMerch(ctx context.Context, userID int, merchName string) error {
-	tx, err := r.database.Connection.BeginTx(
-		ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead},
-	)
+func (r orderRepositoryImpl) BuyMerch(ctx context.Context, userID int, merchName string) (err error) {
+	tx, err := r.database.Connection.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	defer func() {
 		if err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
+			slog.Error("transaction rolled back", slog.String("error", err.Error()))
 		}
 	}()
 
 	var merch domain.Merch
-	err = tx.QueryRow(ctx, "SELECT id, name, price FROM merch WHERE name = $1", merchName).Scan(&merch.ID, &merch.Name, &merch.Price)
+	err = tx.QueryRow(ctx, `
+        SELECT id, name, price 
+        FROM merch 
+        WHERE name = $1
+    `, merchName).Scan(&merch.ID, &merch.Name, &merch.Price)
 	if err != nil {
-		return errors.New("merch does not exists")
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Info("merch does not exist", slog.String("merchName", merchName))
+			return errors.New("merch does not exist")
+		}
+		return fmt.Errorf("failed to fetch merch: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, "UPDATE users SET balance = balance - $1 WHERE id = $2", merch.Price, userID)
+	cmdTag, err := tx.Exec(ctx, `
+        UPDATE users 
+        SET balance = balance - $1 
+        WHERE id = $2 AND balance >= $1
+    `, merch.Price, userID)
 	if err != nil {
-		if err.Error() == `ERROR: new row for relation "users" violates check constraint "users_balance_check" (SQLSTATE 23514)` {
-			slog.Info("insufficient funds", slog.String("SQL error:", err.Error()))
-			return errors.New("insufficient funds")
-		} else {
-			slog.Error(
-				"Unexpected error while updating user balance (buy merch)",
-				slog.String("SQL error:", err.Error()),
-				slog.Int("userId", userID),
-				slog.Int("merchPrice", merch.Price),
-			)
-			return errors.New("failed to update user balance")
-		}
+		return fmt.Errorf("failed to update user balance: %w", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		slog.Info("insufficient funds", slog.Int("userID", userID), slog.Int("merchPrice", merch.Price))
+		return errors.New("insufficient funds")
 	}
 
 	var orderID int
-	err = tx.QueryRow(ctx, "INSERT INTO merch_orders (owner, merch) VALUES ($1, $2) RETURNING id", userID, merch.ID).Scan(&orderID)
+	err = tx.QueryRow(ctx, `
+        INSERT INTO merch_orders (owner, merch) 
+        VALUES ($1, $2) 
+        RETURNING id
+    `, userID, merch.ID).Scan(&orderID)
 	if err != nil {
-		slog.Error("failed to create merch order", slog.String("SQL error:", err.Error()))
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error("failed to create merch order", slog.String("error", "no order created"))
+			return errors.New("order creation failed")
+		}
 		return fmt.Errorf("failed to create merch order: %w", err)
 	}
 
-	err = tx.Commit(ctx)
-	if err != nil {
-		slog.Error("failed to commit transaction", slog.String("SQL error:", err.Error()))
+	if err = tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	slog.Info("merch purchase successful", slog.Int("userID", userID), slog.Int("merchID", merch.ID), slog.Int("orderID", orderID))
 	return nil
 }
 

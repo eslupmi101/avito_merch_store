@@ -21,16 +21,10 @@ func NewAuth(userRepository domain.UserRepository, timeout time.Duration) domain
 	}
 }
 
-func (au *auth) GetByUsernamePassword(ctx context.Context, username, password string) (*domain.User, error) {
+func (au *auth) GetOrCreateByUsernamePassword(ctx context.Context, username, password string) (*domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
 	defer cancel()
-	return au.userRepository.GetByUsernamePassword(ctx, username, password)
-}
-
-func (au *auth) CreateUser(ctx context.Context, username, password string) (*domain.User, error) {
-	ctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
-	defer cancel()
-	return au.userRepository.Create(ctx, username, password)
+	return au.userRepository.GetOrCreateByUsernamePassword(ctx, username, password)
 }
 
 func (auth *auth) CreateToken(userID int, secretKey string) (string, error) {

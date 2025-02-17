@@ -1,7 +1,7 @@
 import unittest
 import requests
 
-BASE_URL = "http://localhost:8081"
+BASE_URL = "http://localhost:8090"
 
 class APITests(unittest.TestCase):
 

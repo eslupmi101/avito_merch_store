@@ -18,8 +18,7 @@ type AuthResponse struct {
 }
 
 type AuthUsecase interface {
-	GetByUsernamePassword(ctx context.Context, username, password string) (*domain.User, error)
-	CreateUser(ctx context.Context, username, password string) (*domain.User, error)
+	GetOrCreateByUsernamePassword(ctx context.Context, username, password string) (*domain.User, error)
 	CreateToken(userID int, secretKey string) (string, error)
 }
 

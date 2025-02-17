@@ -30,7 +30,7 @@ func main() {
 	logger.Info("Starting merch store api", slog.String("env", cfg.Env))
 	logger.Debug("Debug messages are enabled")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout*time.Second)
 	defer cancel()
 
 	connStr, err := cfg.BuildPGConnString()
@@ -61,7 +61,6 @@ func main() {
 	route.Setup(&cfg, cfg.HTTPServer.Timeout, db, router)
 
 	http.ListenAndServe(cfg.HTTPServer.Address, router)
-
 }
 
 func setupLogger(env string) *slog.Logger {
@@ -78,7 +77,7 @@ func setupLogger(env string) *slog.Logger {
 		)
 	case envProd:
 		logger = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}),
 		)
 	default:
 		log.Fatalf("Invalid env provided: %s", env)

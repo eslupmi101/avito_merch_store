@@ -70,9 +70,9 @@ func (cs *CoinSender) CoinSender(w http.ResponseWriter, r *http.Request) {
 			slog.Info(".", slog.Int("userID", userID))
 			http.Error(w, "Insufficient funds", http.StatusBadRequest)
 
-		case "toUser does not exists":
-			slog.Info("ToUser does not exists.", slog.String("ToUser", request.ToUser))
-			http.Error(w, "ToUser does not exists", http.StatusBadRequest)
+		case "toUser does not exist":
+			slog.Info("toUser does not exists.", slog.String("ToUser", request.ToUser))
+			http.Error(w, "toUser does not exists", http.StatusBadRequest)
 
 		default:
 			slog.Error("Failed to send coin.", slog.Int("userID", userID), slog.String("ToUser", request.ToUser), slog.String("error", err.Error()))
